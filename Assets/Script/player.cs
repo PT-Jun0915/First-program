@@ -12,9 +12,10 @@ public class player : MonoBehaviour
     float vAxis;
     bool wDown;
 
-    bool jDown, isJump;
+    bool jDown, isJump, isDodge;
 
     Vector3 moveVec;
+    Vector3 dodgeVec;
 
     Rigidbody rigid;
     Animator anim;
@@ -33,6 +34,7 @@ public class player : MonoBehaviour
         Move();
         Turn();
         Jump();
+        Dodge();
     }
     void GetInput() // 입력 ( 키보드 ) 관련 함수
     {
@@ -44,6 +46,8 @@ public class player : MonoBehaviour
     void Move() // 움직이는 방법 관련 함수
     {
         moveVec = new Vector3(hAxis, 0, vAxis).normalized;
+
+        if (isDodge) moveVec = dodgeVec;
 
         if (wDown) transform.position += moveVec * speed * 0.3f * Time.deltaTime;
         else transform.position += moveVec * speed * Time.deltaTime;
@@ -57,13 +61,30 @@ public class player : MonoBehaviour
     }
     void Jump()
     {
-        if (jDown && !isJump) // ! = not
+        if (jDown && moveVec == Vector3.zero && !isJump && !isDodge) // ! = not
         {
             rigid.AddForce(Vector3.up * 15, ForceMode.Impulse);
             anim.SetBool("Is_jump", true);
             anim.SetTrigger("Do_jump");
             isJump = true;
         }
+    }
+    void Dodge()
+    {
+        if (jDown && moveVec != Vector3.zero && !isJump && !isDodge) // ! = not
+        {
+            dodgeVec = moveVec;
+            speed *= 2;
+            anim.SetTrigger("Do_dodge");
+            isDodge = true;
+
+            Invoke("DodgeOut", 0.4f);
+        }
+    }
+    void DodgeOut()
+    {
+        speed *= 0.5f;
+        isDodge = false;
     }
     private void OnCollisionEnter(Collision collision) // 이 함수를 통해 바닥에 닿는 걸 감지 + isJump 변수 false
     {
